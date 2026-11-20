@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>¿Por qué el procesador espera? Cuello de botella CPU–memoria</title>
+<meta name="description" content="Página educativa e interactiva sobre el cuello de botella entre el procesador y la memoria. Uniciencia · ISO 203.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f2f5f7;--ink:#17262f;--mute:#4f6470;--line:#c9d4db;--teal:#0b7a85;--teal-d:#085c64;--amber:#d99a00;--ok:#1b7a43;--bad:#b3261e;--code:#10202a;--card:#fff}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.65 "IBM Plex Sans",system-ui,sans-serif}
+a{color:var(--teal-d)}
+:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
+header.top{display:flex;gap:1.2rem;flex-wrap:wrap;justify-content:space-between;align-items:center;padding:.8rem 5vw;border-bottom:1px solid var(--line);background:#fff;position:sticky;top:0;z-index:5}
+header.top strong{font-family:"IBM Plex Serif",serif}
+nav a{margin-right:1rem;text-decoration:none;font-size:.95rem}
+main{max-width:980px;margin:auto;padding:0 5vw}
+section{padding:3.5rem 0;border-bottom:1px solid var(--line)}
+h1,h2,h3{font-family:"IBM Plex Serif",Georgia,serif;line-height:1.2;margin:0 0 1rem}
+h1{font-size:clamp(2.1rem,6vw,3.4rem);max-width:16ch}
+h2{font-size:clamp(1.6rem,4vw,2.1rem)}
+h3{font-size:1.2rem}
+p{max-width:68ch}
+.lead{font-size:1.2rem;color:var(--mute)}
+.hero{display:grid;gap:2rem;grid-template-columns:1fr;padding-top:3rem}
+@media(min-width:860px){.hero{grid-template-columns:1fr 1.05fr;align-items:center}}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:1.4rem}
+.panel h3{margin-bottom:.4rem}
+label{display:block;font-weight:500;margin:.6rem 0 .3rem}
+input[type=range]{width:100%;accent-color:var(--teal)}
+.bar{display:flex;height:2.4rem;border-radius:4px;overflow:hidden;background:var(--line);margin:.8rem 0;font-size:.85rem;font-weight:600}
+.bar .work{background:var(--teal);color:#fff;display:flex;align-items:center;padding-left:.6rem;transition:width .25s;white-space:nowrap;overflow:hidden}
+.bar .wait{background:var(--amber);color:#2b2000;flex:1;display:flex;align-items:center;padding-left:.6rem;white-space:nowrap;overflow:hidden}
+.stats{display:flex;gap:1.5rem;flex-wrap:wrap;color:var(--mute);font-size:.95rem}
+.stats b{color:var(--ink);font-size:1.15rem}
+.grid3{display:grid;gap:1.2rem;grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
+.grid3>div{border-left:4px solid var(--teal);padding-left:1rem}
+table{border-collapse:collapse;width:100%;margin-top:1rem;background:#fff;font-size:.95rem}
+th,td{border:1px solid var(--line);padding:.55rem .7rem;text-align:left}
+th{background:#e4ecf0}
+.tw{overflow-x:auto}
+.steps{list-style:none;padding:0;counter-reset:s;display:grid;gap:.8rem;max-width:68ch}
+.steps li{counter-increment:s;padding-left:2.6rem;position:relative}
+.steps li:before{content:counter(s);position:absolute;left:0;top:0;width:1.9rem;height:1.9rem;border-radius:50%;background:var(--teal);color:#fff;text-align:center;font-weight:600;line-height:1.9rem}
+.opt{display:block;width:100%;text-align:left;margin:.45rem 0;padding:.7rem .9rem;font:inherit;background:#fff;border:1.5px solid var(--line);border-radius:5px;cursor:pointer;color:var(--ink)}
+.opt:hover{border-color:var(--teal)}
+.opt.ok{border-color:var(--ok);background:#e6f4ec}
+.opt.no{border-color:var(--bad);background:#fbeceb}
+.fb{margin-top:.6rem;padding:.7rem .9rem;border-left:4px solid var(--teal);background:#e8f2f4;display:none}
+.fb.show{display:block}
+.btn{font:inherit;font-weight:600;background:var(--teal-d);color:#fff;border:0;border-radius:5px;padding:.6rem 1.1rem;cursor:pointer}
+.btn.alt{background:#fff;color:var(--teal-d);border:1.5px solid var(--teal-d)}
+.tabs{display:flex;gap:.5rem;margin:1rem 0 0;flex-wrap:wrap}
+.tabs button{border-radius:5px 5px 0 0}
+pre{margin:0;background:var(--code);color:#dbe8ee;padding:1.1rem;overflow-x:auto;font:.86rem/1.55 "IBM Plex Mono",monospace;border-radius:0 6px 6px 6px;max-height:520px}
+.oop{display:grid;gap:1rem;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));margin-top:1.4rem}
+.oop div{background:#fff;border:1px solid var(--line);border-radius:6px;padding:1rem}
+.oop code,p code{font-family:"IBM Plex Mono",monospace;font-size:.88em;background:#e4ecf0;padding:.1em .35em;border-radius:3px}
+.score{font-weight:600;margin-top:1rem}
+footer{max-width:980px;margin:auto;padding:2rem 5vw 3rem;color:var(--mute);font-size:.92rem}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<header class="top">
+  <strong>Cuello de botella CPU–memoria</strong>
+  <nav aria-label="Secciones"><a href="#aprender">Aprender</a><a href="#problema">Actividad</a><a href="#codigo">Código C++</a><a href="#repaso">Repaso</a><a href="#referencias">Referencias</a></nav>
+</header>
+<main>
+
+<section class="hero" id="inicio">
+  <div>
+    <h1>Tu procesador es rápido. A veces solo está esperando.</h1>
+    <p class="lead">Un computador no es tan veloz como su pieza más rápida, sino como su pieza más lenta en el camino de los datos. Aquí aprenderás por qué, sin necesidad de saber de computadores.</p>
+    <p><a class="btn" style="text-decoration:none;display:inline-block" href="#aprender">Empezar a aprender</a></p>
+  </div>
+  <div class="panel" aria-labelledby="demoT">
+    <h3 id="demoT">Pruébalo: ¿cuánto trabaja la CPU?</h3>
+    <p style="margin:0;color:var(--mute);font-size:.95rem">La caché es una mini-memoria muy rápida. Mueve el control para ver qué pasa cuando el dato casi siempre está ahí… o casi nunca.</p>
+    <label for="hit">Veces que el dato está en la caché: <b id="hitv">90</b> %</label>
+    <input id="hit" type="range" min="0" max="100" value="90">
+    <div class="bar" role="img" aria-label="Tiempo de trabajo frente a tiempo de espera"><div class="work" id="work">Trabaja</div><div class="wait" id="wait">Espera</div></div>
+    <div class="stats"><span>Tiempo por dato<br><b id="t">–</b></span><span>Uso útil de la CPU<br><b id="u">–</b></span></div>
+  </div>
+</section>
+
+<section id="aprender">
+  <h2>Primero: aprende las tres piezas</h2>
+  <p class="lead">Imagina una cocina. Los términos técnicos vienen después de la imagen.</p>
+  <div class="grid3">
+    <div><h3>Procesador (CPU)</h3><p><b>El cocinero.</b> Ejecuta las instrucciones y hace los cálculos. Puede trabajar muy rápido, pero solo si tiene los ingredientes a la mano.</p></div>
+    <div><h3>Memoria caché</h3><p><b>El mesón de trabajo.</b> Es pequeña y está pegada al cocinero. Guarda lo que acaba de usar o lo que probablemente usará enseguida. Se divide en niveles L1, L2 y L3.</p></div>
+    <div><h3>Memoria RAM</h3><p><b>La despensa del restaurante.</b> Cabe mucho más, pero ir hasta allá toma tiempo. Mientras el cocinero camina, no cocina.</p></div>
+  </div>
+  <h3 style="margin-top:2.2rem">La jerarquía de memoria</h3>
+  <p>Lo rápido es pequeño y caro; lo grande es lento y barato. Por eso un computador combina varios niveles. Las cifras son valores típicos de ejemplo, no medidas de un equipo concreto.</p>
+  <div class="tw"><table>
+    <tr><th>Nivel</th><th>Analogía</th><th>Velocidad (aprox.)</th><th>Capacidad (aprox.)</th></tr>
+    <tr><td>Caché L1</td><td>Manos del cocinero</td><td>~1 ns</td><td>decenas de KB</td></tr>
+    <tr><td>Caché L2 / L3</td><td>Mesón de trabajo</td><td>~4–15 ns</td><td>cientos de KB a varios MB</td></tr>
+    <tr><td>RAM</td><td>Despensa</td><td>~80 ns</td><td>varios GB</td></tr>
+  </table></div>
+  <h3 style="margin-top:2.2rem">¿Por qué funciona la caché? La localidad</h3>
+  <p><b>Localidad temporal:</b> lo que usaste hace un momento probablemente lo usarás otra vez. <b>Localidad espacial:</b> si usas un dato, probablemente usarás los que están al lado. Los programas se comportan así, y por eso una caché pequeña acierta tanto.</p>
+  <h3 style="margin-top:2.2rem">Qué es el cuello de botella</h3>
+  <p>Ocurre cuando una parte del sistema limita a todas las demás. Si el cocinero cocina en segundos pero la despensa tarda minutos en entregar, el restaurante sale lento aunque contrates al mejor cocinero. Subir solo la velocidad de la CPU no garantiza un computador proporcionalmente más rápido.</p>
+</section>
+
+<section id="problema">
+  <h2>Actividad: encuentra la demora y elige una solución</h2>
+  <p class="lead">Lee cada situación y escoge la mejor alternativa. Recibirás una explicación de por qué sirve y cuáles son sus límites.</p>
+  <ol class="steps">
+    <li><b>Aprender</b> las tres piezas (ya lo hiciste).</li>
+    <li><b>Reconocer</b> qué causa la espera en cada situación.</li>
+    <li><b>Escoger</b> una alternativa y leer su explicación.</li>
+    <li><b>Revisar</b> lo aprendido en el repaso final.</li>
+  </ol>
+  <div id="escenarios"></div>
+</section>
+
+<section id="codigo">
+  <h2>La página, vista como código C++</h2>
+  <p class="lead">La actividad de esta página se puede modelar con programación orientada a objetos: una clase principal <code>Actividad</code> que se extiende en <code>Cuestionario</code> y <code>Simulacion</code>. Esto hace el código más ordenado, reutilizable y fácil de mantener. Los archivos están en la carpeta <code>src/</code>.</p>
+  <div class="oop">
+    <div><h3>Herencia</h3><p><code>Actividad</code> es la clase principal. <code>Cuestionario</code> y <code>Simulacion</code> la extienden con <code>public</code> y reutilizan su título y su puntaje.</p></div>
+    <div><h3>Encapsulamiento</h3><p>Los datos (preguntas, respuestas, puntaje) son <code>private</code>. Se usan solo mediante métodos como <code>esCorrecta()</code> o <code>sumarPuntos()</code>; la respuesta correcta ni siquiera tiene getter.</p></div>
+    <div><h3>Polimorfismo</h3><p>Cada actividad implementa a su manera <code>ejecutar()</code>. En <code>main</code> una sola lista de <code>Actividad</code> las ejecuta todas.</p></div>
+  </div>
+<div class="tabs" role="tablist">
+    <button class="btn" role="tab" id="tab1" aria-selected="true">actividad.hpp</button>
+    <button class="btn alt" role="tab" id="tab2" aria-selected="false">main.cpp</button>
+  </div>
+  <pre id="code" tabindex="0"><code id="codetxt"></code></pre>
+  <p style="margin-top:1rem">Compilar y ejecutar: <code>g++ -std=c++17 src/main.cpp -o demo &amp;&amp; ./demo</code></p>
+  <p>Salida de la simulación (el cuestionario después te pregunta por teclado):</p>
+  <pre style="border-radius:6px">Aciertos de cache   0 % |  81.0 ns por dato | CPU trabaja   5.8 % #
+Aciertos de cache  50 % |  41.0 ns por dato | CPU trabaja  10.9 % ##
+Aciertos de cache  90 % |   9.0 ns por dato | CPU trabaja  35.7 % #######
+Aciertos de cache 100 % |   1.0 ns por dato | CPU trabaja  83.3 % ################</pre>
+</section>
+
+<section id="repaso">
+  <h2>Repaso: comprueba lo aprendido</h2>
+  <div id="quiz"></div>
+  <p class="score" id="score" aria-live="polite"></p>
+</section>
+
+<section id="inferencias">
+  <h2>Lo que concluimos</h2>
+  <p>Más frecuencia en la CPU no garantiza más rendimiento, porque si los datos no llegan a tiempo, parte de su capacidad queda sin usar.</p>
+  <p>Mayor capacidad de memoria no significa mayor velocidad. Por eso se combinan niveles: la jerarquía busca un equilibrio entre velocidad, capacidad, costo y latencia.</p>
+  <p>La localidad de los datos hace que las cachés sean efectivas y reduce los accesos lentos a la RAM. El objetivo no es eliminar la diferencia de velocidad, sino que el procesador espere con menos frecuencia.</p>
+</section>
+
+<section id="referencias" style="border:0">
+  <h2>Referencias</h2>
+  <ul>
+    <li>Patterson, D. A., &amp; Hennessy, J. L. <i>Computer Organization and Design: The Hardware/Software Interface.</i> Morgan Kaufmann.</li>
+    <li>Stallings, W. <i>Computer Organization and Architecture.</i> Pearson.</li>
+    <li>Hennessy, J. L., &amp; Patterson, D. A. <i>Computer Architecture: A Quantitative Approach.</i> Morgan Kaufmann.</li>
+    <li>Intel Corporation. <i>Intel® 64 and IA-32 Architectures Software Developer’s Manual.</i> Intel.</li>
+    <li>Microsoft. <i>Microsoft Learn: Windows hardware and architecture documentation.</i></li>
+  </ul>
+</section>
+</main>
+<footer>
+  Corporación Universitaria de Ciencia y Desarrollo (UNICIENCIA) · Asignatura ISO 203 · Docente: Wilmer Callejas · Bogotá, Colombia, 2026<br>
+  Integrantes: [Nombre del estudiante 1], [Nombre del estudiante 2]
+</footer>
+
+<script>
+const HPP = `#pragma once
+#include <algorithm>
+#include <iomanip>
+#include <iostream>
+#include <string>
+#include <utility>
+#include <vector>
+
+// ---------------------------------------------------------------
+// CLASE PRINCIPAL (abstracta): lo que tienen en comun todas las actividades.
+// ENCAPSULAMIENTO: titulo_ y puntaje_ son privados; solo se leen con
+// getters y el puntaje solo puede subir con sumarPuntos().
+// ---------------------------------------------------------------
+class Actividad {
+private:
+    std::string titulo_;
+    int puntaje_ = 0;
+
+protected:
+    explicit Actividad(std::string titulo) : titulo_(std::move(titulo)) {}
+    void sumarPuntos(int puntos) { if (puntos > 0) puntaje_ += puntos; }
+
+public:
+    virtual ~Actividad() = default;
+
+    const std::string& titulo() const { return titulo_; }
+    int puntaje() const { return puntaje_; }
+
+    virtual void ejecutar() = 0;   // cada actividad la hace a su manera
+};
+
+// ---------------------------------------------------------------
+// Pregunta: guarda sus datos privados. La respuesta correcta NO tiene
+// getter: solo se puede comprobar con esCorrecta().
+// ---------------------------------------------------------------
+class Pregunta {
+private:
+    std::string enunciado_;
+    std::vector<std::string> opciones_;
+    int correcta_;                 // indice base 0
+    std::string explicacion_;
+
+public:
+    Pregunta(std::string enunciado, std::vector<std::string> opciones,
+             int correcta, std::string explicacion)
+        : enunciado_(std::move(enunciado)), opciones_(std::move(opciones)),
+          correcta_(correcta), explicacion_(std::move(explicacion)) {}
+
+    const std::string& enunciado() const { return enunciado_; }
+    const std::vector<std::string>& opciones() const { return opciones_; }
+    const std::string& explicacion() const { return explicacion_; }
+    bool esCorrecta(int opcion) const { return opcion == correcta_; }
+};
+
+// ---------------------------------------------------------------
+// HERENCIA 1: Cuestionario "es una" Actividad
+// ---------------------------------------------------------------
+class Cuestionario : public Actividad {
+private:
+    std::vector<Pregunta> preguntas_;
+    std::vector<int> respuestas_;  // lo que eligio el usuario
+
+    static int leerOpcion(std::size_t total) {
+        int op = 0;
+        while (true) {
+            std::cout << "Tu respuesta (1-" << total << "): ";
+            if (std::cin >> op) {
+                if (op >= 1 && op <= static_cast<int>(total)) return op - 1;
+                std::cout << "Opcion fuera de rango.\\n";
+            } else if (std::cin.eof()) {
+                return -1;         // no hay mas entrada
+            } else {
+                std::cin.clear();
+                std::cin.ignore(1000, '\\n');
+                std::cout << "Escribe solo un numero.\\n";
+            }
+        }
+    }
+
+public:
+    explicit Cuestionario(std::string titulo) : Actividad(std::move(titulo)) {}
+
+    void agregar(Pregunta pregunta) { preguntas_.push_back(std::move(pregunta)); }
+
+    void ejecutar() override {
+        std::cout << "\\n=== " << titulo() << " ===\\n";
+        respuestas_.clear();
+        for (const auto& p : preguntas_) {
+            std::cout << "\\n" << p.enunciado() << "\\n";
+            for (std::size_t i = 0; i < p.opciones().size(); ++i)
+                std::cout << "  " << i + 1 << ") " << p.opciones()[i] << "\\n";
+
+            int opcion = leerOpcion(p.opciones().size());
+            respuestas_.push_back(opcion);
+
+            if (p.esCorrecta(opcion)) { sumarPuntos(1); std::cout << "Correcto. "; }
+            else                      { std::cout << "No exactamente. "; }
+            std::cout << p.explicacion() << "\\n";
+        }
+        std::cout << "\\nAciertos: " << puntaje() << " de " << preguntas_.size() << "\\n";
+    }
+};
+
+// ---------------------------------------------------------------
+// HERENCIA 2: Simulacion "es una" Actividad
+// Modelo: cache = 1 ns, RAM = 80 ns, la CPU calcula 5 ns por cada dato.
+// ---------------------------------------------------------------
+class Simulacion : public Actividad {
+private:
+    double tasaCache_ = 0.9;       // fraccion de veces que el dato esta en cache
+    static constexpr double LATENCIA_CACHE_NS = 1.0;
+    static constexpr double LATENCIA_RAM_NS = 80.0;
+    static constexpr double TRABAJO_NS = 5.0;
+
+    double tiempoPorDatoNs() const {
+        return LATENCIA_CACHE_NS + (1.0 - tasaCache_) * LATENCIA_RAM_NS;
+    }
+    double porcentajeUtil() const {
+        return TRABAJO_NS / (TRABAJO_NS + tiempoPorDatoNs()) * 100.0;
+    }
+
+public:
+    explicit Simulacion(std::string titulo) : Actividad(std::move(titulo)) {}
+
+    // El setter valida el valor: asi el objeto nunca queda en un estado invalido
+    void ajustarTasaCache(double tasa) { tasaCache_ = std::clamp(tasa, 0.0, 1.0); }
+
+    void ejecutar() override {
+        std::cout << "\\n=== " << titulo() << " ===\\n";
+        std::cout << std::fixed << std::setprecision(1);
+        for (double tasa : {0.0, 0.5, 0.9, 1.0}) {
+            ajustarTasaCache(tasa);
+            int barras = static_cast<int>(porcentajeUtil() / 5.0);
+            std::cout << "Aciertos de cache " << std::setw(3) << static_cast<int>(tasa * 100)
+                      << " % | " << std::setw(5) << tiempoPorDatoNs() << " ns por dato | CPU trabaja "
+                      << std::setw(5) << porcentajeUtil() << " % " << std::string(barras, '#') << "\\n";
+        }
+        sumarPuntos(1);            // completar la simulacion cuenta como 1 punto
+    }
+};
+`;
+const CPP = `#include <memory>
+#include <vector>
+#include "actividad.hpp"
+
+int main() {
+    auto simulacion = std::make_unique<Simulacion>("Simulacion: cuanto trabaja la CPU");
+
+    auto cuestionario = std::make_unique<Cuestionario>("Cuestionario: cuello de botella");
+    cuestionario->agregar(Pregunta(
+        "Que es un cuello de botella en este contexto?",
+        {"Cuando la RAM se llena",
+         "Cuando la CPU calcula mas rapido de lo que la memoria entrega datos",
+         "Cuando la cache es muy grande"}, 1,
+        "La parte mas lenta del camino limita el rendimiento de todo el conjunto."));
+    cuestionario->agregar(Pregunta(
+        "Que nivel de memoria suele ser el mas rapido y pequeno?",
+        {"RAM", "Cache L3", "Cache L1"}, 2,
+        "Los niveles cercanos a la CPU son mas rapidos y pequenos."));
+    cuestionario->agregar(Pregunta(
+        "Cual es la meta realista de la jerarquia de memoria?",
+        {"Eliminar la diferencia de velocidad",
+         "Que el procesador espere con menos frecuencia",
+         "Reemplazar la RAM por cache"}, 1,
+        "La diferencia no desaparece; se reduce cuanto espera la CPU."));
+
+    // POLIMORFISMO: una sola lista de Actividad, cada una se ejecuta a su manera
+    std::vector<std::unique_ptr<Actividad>> actividades;
+    actividades.push_back(std::move(simulacion));
+    actividades.push_back(std::move(cuestionario));
+
+    int total = 0;
+    for (auto& a : actividades) {
+        a->ejecutar();
+        total += a->puntaje();
+    }
+    std::cout << "\\nPuntaje total: " << total << "\\nMenos espera, mas rendimiento.\\n";
+    return 0;
+}
+`;
+
+/* Demo del héroe: modelo simple L1 = 1 ns, RAM = 80 ns, trabajo útil = 5 ns por dato */
+const hit = document.getElementById('hit');
+function demo(){
+  const h = +hit.value / 100, t = 1 + (1 - h) * 80, u = 5 / (5 + t) * 100;
+  document.getElementById('hitv').textContent = hit.value;
+  document.getElementById('t').textContent = t.toFixed(1) + ' ns';
+  document.getElementById('u').textContent = u.toFixed(0) + ' %';
+  const w = document.getElementById('work');
+  w.style.width = u + '%';
+  w.textContent = u > 22 ? 'Trabaja' : '';
+  document.getElementById('wait').textContent = u < 78 ? 'Espera' : '';
+}
+hit.addEventListener('input', demo); demo();
+
+/* Pestañas de código */
+const ct = document.getElementById('codetxt'), t1 = document.getElementById('tab1'), t2 = document.getElementById('tab2');
+function show(n){
+  ct.textContent = n === 1 ? HPP : CPP;
+  t1.className = 'btn' + (n === 1 ? '' : ' alt'); t2.className = 'btn' + (n === 2 ? '' : ' alt');
+  t1.setAttribute('aria-selected', n === 1); t2.setAttribute('aria-selected', n === 2);
+}
+t1.onclick = () => show(1); t2.onclick = () => show(2); show(1);
+
+/* Preguntas: a = índice correcto, why = explicación */
+function build(el, items, onDone){
+  let right = 0, done = 0;
+  items.forEach((q, i) => {
+    const box = document.createElement('div'); box.style.margin = '1.6rem 0';
+    box.innerHTML = `<h3>${q.title}</h3><p>${q.text}</p>`;
+    const fb = document.createElement('div'); fb.className = 'fb';
+    const btns = q.opts.map((o, k) => {
+      const b = document.createElement('button'); b.className = 'opt'; b.textContent = o;
+      b.onclick = () => {
+        if (box.dataset.done) return;
+        box.dataset.done = 1; done++;
+        const good = k === q.a; if (good) right++;
+        b.classList.add(good ? 'ok' : 'no'); if (!good) btns[q.a].classList.add('ok');
+        fb.innerHTML = (good ? '<b>Correcto.</b> ' : '<b>No exactamente.</b> ') + q.why;
+        fb.classList.add('show');
+        if (onDone) onDone(right, done, items.length);
+      };
+      box.appendChild(b); return b;
+    });
+    box.appendChild(fb); el.appendChild(box);
+  });
+}
+
+build(document.getElementById('escenarios'), [
+  {title:'Situación 1: el editor de video', text:'Un programa de edición recorre un video enorme, cuadro por cuadro, y la CPU pasa gran parte del tiempo parada. Los datos nuevos vienen casi siempre de la RAM. ¿Qué ayuda más?',
+   opts:['Subir la frecuencia de la CPU','Una caché más grande y precarga de los datos que vienen','Quitar la memoria RAM'], a:1,
+   why:'La precarga trae los datos antes de que se pidan y una caché mayor guarda más. Su límite: si el video es mucho más grande que la caché, parte del acceso seguirá yendo a la RAM.'},
+  {title:'Situación 2: el mismo dato, una y otra vez', text:'Un juego consulta cientos de veces por segundo la posición del jugador, que casi no cambia. ¿Por qué esto rinde bien en una caché?',
+   opts:['Por la localidad temporal: lo usado hace poco se vuelve a usar','Porque la RAM es más rápida con datos repetidos','Porque la caché es más grande que la RAM'], a:0,
+   why:'El dato queda en L1 y se entrega en ~1 ns. Su límite: si el programa pidiera datos siempre nuevos, la caché casi no ayudaría.'},
+  {title:'Situación 3: ¿comprar más RAM?', text:'Alguien compra el doble de RAM esperando que su procesador "espere menos". El programa ya cabía en la RAM antigua. ¿Qué se puede inferir?',
+   opts:['Mejorará mucho, porque más capacidad es más velocidad','Probablemente casi no cambie: más capacidad no implica menor latencia','Empeorará, porque la RAM nueva ocupa la caché'], a:1,
+   why:'Capacidad y velocidad son cosas distintas. Más RAM ayuda si faltaba espacio, pero no acorta el tiempo de cada acceso. La solución depende del problema real.'}
+]);
+
+const score = document.getElementById('score');
+build(document.getElementById('quiz'), [
+  {title:'Pregunta 1', text:'¿Qué es un cuello de botella en este contexto?', opts:['Cuando la RAM se llena','Cuando la CPU calcula más rápido de lo que la memoria entrega datos','Cuando la caché es muy grande'], a:1,
+   why:'La parte más lenta del camino limita el rendimiento de todo el conjunto.'},
+  {title:'Pregunta 2', text:'¿Qué nivel de memoria suele ser el más rápido y el más pequeño?', opts:['RAM','Caché L3','Caché L1'], a:2,
+   why:'Los niveles más cercanos a la CPU son más rápidos y pequeños; L3 y la RAM ganan capacidad a cambio de latencia.'},
+  {title:'Pregunta 3', text:'¿Cuál es la meta realista de la jerarquía de memoria?', opts:['Eliminar por completo la diferencia de velocidad','Que el procesador espere con menos frecuencia','Reemplazar la RAM por caché'], a:1,
+   why:'La diferencia de velocidad no desaparece; se disminuye la frecuencia con que la CPU tiene que acudir a niveles lentos.'}
+], (r, d, n) => { score.textContent = d < n ? `Llevas ${r} de ${d} respondidas.` : `Resultado final: ${r} de ${n} correctas.`; });
+</script>
+</body>
+</html>
